@@ -41,13 +41,19 @@ cd /vol2/1001/docker./docker-backup-gui.sh
 ###### （三）图形化交互流程
 :star: 备份目录配置
 
+![备份目录](https://github.com/BAGAmalou/GrFnOS-DockerBackup-demo/blob/main/images/directory.png)
+
 运行脚本后，在弹出的图形化界面输入完整备份路径（如 /vol2/1001/ ），点击 OK 确认。
 
 :star: 进度展示
 
+![进度条](https://github.com/BAGAmalou/GrFnOS-DockerBackup-demo/blob/main/images/Running%20bars.png)
+
 系统自动显示备份进度条，直观呈现备份执行进度。
 
 :star: 完成提示
+
+![完成提示](https://github.com/BAGAmalou/GrFnOS-DockerBackup-demo/blob/main/images/finish.png)
 
 备份完成后，展示备份的目录路径及日志文件位置，日志可用于后续故障排查与操作追溯。
 ###### 四、常见问题解决
@@ -73,3 +79,5 @@ ssh -t user@飞牛OS-IP /vol2/1001/docker/docker-backup-gui.sh
  检查 whiptail 与 Docker 可用性，自动安装缺失的 whiptail。
  定义 backup_images 函数，实现获取 Docker 镜像列表、交互配置备份目录、创建目录、逐个备份镜像（含进度统计与日志记录 ）、完成提示等流程。
  执行主函数 backup_images 启动备份操作，完整源码可查看脚本文件内容，便于自定义修改与扩展。
+ 
+ :star: 本人并非专业程序员，仅是心痛因不可抗力删库跑路的项目再没有地方去拉镜像，所以根据粗糙手艺搞出来的项目仅仅是想自己用，不喜勿喷
