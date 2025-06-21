@@ -15,11 +15,22 @@ cd /vol2/1001
 ```bash
 mkdir docker
 ```
-拉取备份脚本
-通过 Gitee 仓库获取自动化脚本并命名为指定文件名：
+切换至指定存储路径
 ```bash
-wget https://gitee.com/8AGAa1ou/6rnDS-Docker-Backup-demo/raw/main/docker-manager.sh -O docker-manager.sh
+cd  docker
 ```
+拉取备份脚本
+
+国内通过 Gitee 仓库获取自动化脚本并命名为指定文件名：
+```bash
+wget https://gitee.com/BAGAmalou/GrFnOS-DockerBackup-demo/blob/main/docker-manager.sh
+```
+
+如果能直连github
+```
+wget https://github.com/BAGAmalou/GrFnOS-DockerBackup-demo/blob/main/docker-manager.sh
+```
+
 ###### （二）权限配置与脚本运行
 权限配置
 为脚本文件赋予可执行权限（以脚本路径 /vol2/1001/docker/docker-manager.sh 为例 ）：
