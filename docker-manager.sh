@@ -1,33 +1,61 @@
 #!/bin/bash
+# 检查操作系统
+OS="$(uname -s)"
+
 # 检查whiptail是否安装
-if ! command -v whiptail &> /dev/null; then
+if ! command -v whiptail &> /dev/null;
+then
     echo "正在安装whiptail..."
-    sudo apt-get update
-    sudo apt-get install -y whiptail
+    if [ "$OS" = "Linux" ];
+    then
+        sudo apt-get update
+        sudo apt-get install -y whiptail
+    else
+        whiptail --msgbox "在非Linux系统上无法自动安装whiptail，请手动安装。" 10 60
+        exit 1
+    fi
 fi
+
+# 配置默认路径
+DEFAULT_BACKUP_DIR="$HOME/docker_backups"
+DEFAULT_DEPLOY_DIR="$HOME/docker_data"
+
+# 日志函数
+log() {
+    local log_dir="$1"
+    local log_file="$2"
+    local message="$3"
+    mkdir -p "$log_dir"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" >> "$log_dir/$log_file"
+}
 
 # 主备份函数
 backup_images() {
     # 获取所有Docker镜像
     images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>")
-    if [ -z "$images" ]; then
+    if [ -z "$images" ];
+    then
         whiptail --msgbox "未找到Docker镜像！" 10 30
         return 1
     fi
     # 选择备份目录
-    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 /vol2/1001/docker_backups 3>&1 1>&2 2>&3)
-    if [ -z "$backup_dir" ]; then
+    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 "$DEFAULT_BACKUP_DIR" 3>&1 1>&2 2>&3)
+    if [ -z "$backup_dir" ];
+    then
         whiptail --msgbox "必须指定备份目录！" 10 30
         return 1
     fi
     
     # 创建目录（如果不存在）
     mkdir -p "$backup_dir"
+    log "$backup_dir" "backup.log" "开始备份镜像"
+    
     # 进度条计数
     total=$(echo "$images" | wc -l)
     count=0
     # 逐个备份镜像
-    for img in $images; do
+    for img in $images;
+    do
         # 生成文件名
         filename=$(echo "$img" | sed 's/[^a-zA-Z0-9._-]/_/g').tar
         save_path="$backup_dir/$filename"
@@ -41,17 +69,25 @@ backup_images() {
         echo "XXX"
         
         # 执行备份
-        docker save -o "$save_path" "$img" 2>&1 | tee -a "$backup_dir/backup.log"
+        if docker save -o "$save_path" "$img" 2>&1 | tee -a "$backup_dir/backup.log";
+        then
+            log "$backup_dir" "backup.log" "成功备份: $img 到 $filename"
+        else
+            log "$backup_dir" "backup.log" "备份失败: $img"
+        fi
         
     done | whiptail --gauge "备份Docker镜像中..." 10 60 0
     # 完成提示
-    whiptail --msgbox "备份完成！\n备份目录: $backup_dir\n日志文件: $backup_dir/backup.log" 12 60
+    whiptail --msgbox "备份完成！
+备份目录: $backup_dir
+日志文件: $backup_dir/backup.log" 12 60
 }
 
 # 主恢复函数（优化界面显示及增加分页功能，取消额外简化名称显示）
 restore_images() {
     # 选择备份目录
-    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 /vol2/1001/docker_backups 3>&1 1>&2 2>&3)
+    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 "$DEFAULT_BACKUP_DIR" 3>&1 1>&2 2>&3)
+    log "$backup_dir" "restore.log" "开始恢复镜像"
     
     if [ -z "$backup_dir" ]; then
         whiptail --msgbox "必须指定备份目录！" 10 30
@@ -188,7 +224,8 @@ deploy_images() {
         return 1
     fi
     # 选择部署目录
-    deploy_dir=$(whiptail --inputbox "请输入部署目录完整路径：" 10 60 /vol2/1001/docker_data 3>&1 1>&2 2>&3)
+    deploy_dir=$(whiptail --inputbox "请输入部署目录完整路径：" 10 60 "$DEFAULT_DEPLOY_DIR" 3>&1 1>&2 2>&3)
+    log "$deploy_dir" "deploy.log" "开始部署容器"
     if [ -z "$deploy_dir" ]; then
         whiptail --msgbox "必须指定部署目录！" 10 30
         return 1
@@ -268,7 +305,8 @@ backup_container_data() {
     fi
     
     # 选择备份目录
-    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 /vol2/1001/docker_backups/data 3>&1 1>&2 2>&3)
+    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 "$DEFAULT_BACKUP_DIR/data" 3>&1 1>&2 2>&3)
+    log "$backup_dir" "backup_data.log" "开始备份容器数据"
     if [ -z "$backup_dir" ]; then
         whiptail --msgbox "必须指定备份目录！" 10 30
         return 1
@@ -335,7 +373,8 @@ backup_container_data() {
 # 恢复容器数据函数
 restore_container_data() {
     # 选择备份目录
-    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 /vol2/1001/docker_backups/data 3>&1 1>&2 2>&3)
+    backup_dir=$(whiptail --inputbox "请输入备份目录完整路径：" 10 60 "$DEFAULT_BACKUP_DIR/data" 3>&1 1>&2 2>&3)
+    log "$backup_dir" "restore_data.log" "开始恢复容器数据"
     if [ -z "$backup_dir" ] || [ ! -d "$backup_dir" ]; then
         whiptail --msgbox "备份目录不存在！" 10 30
         return 1
